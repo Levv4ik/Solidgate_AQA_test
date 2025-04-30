@@ -74,22 +74,28 @@ public class PaymentTest extends BaseSeleniumTest {
         PaymentPage paymentPage = new PaymentPage();
         int priceFromOrderPage = (int) paymentPage.getPrice();
         String currencyFromOrderPage = paymentPage.getCurrency();
-
-
+    
+        // Verify that the displayed price on the UI matches the expected order price
         Assert.assertEquals(orderPrice, priceFromOrderPage);
+    
+        // Verify that the displayed currency on the UI matches the expected order currency
         Assert.assertEquals(orderCurrency, currencyFromOrderPage);
-
-
+    
         PaymentStatusPage paymentStatusPage = new PaymentPage().payWithCard(validCardNumber, expireDate, cvv, cardHolder);
-
+    
+        // Wait until the page is redirected to a new URL (payment completion)
         wait.until(ExpectedConditions.not(ExpectedConditions.urlToBe(paymentPageUrl)));
-
+    
+        // Assert that the user is redirected to the success URL after successful payment
         Assert.assertEquals(successURL, driver.getCurrentUrl());
+    
+        // Assert that the success message is displayed after successful payment
         Assert.assertEquals("Subscription activated!", paymentStatusPage.getStatusTitle());
-
+    
         String orderIdJson = "{ \"order_id\": \"" + randomOrderId + "\" }";
-
+    
         signatureString = SignatureGenerator.generateSignature(publicKey, orderIdJson, secretKey);
+    
         Response response = given()
                 .baseUri("https://pay.solidgate.com")
                 .log().all()
@@ -103,18 +109,22 @@ public class PaymentTest extends BaseSeleniumTest {
                 .log().all()
                 .extract()
                 .response();
-
+    
         int priceFromOrderStatus = response.jsonPath().getInt("order.amount");
         String currencyFromOrderStatus = response.jsonPath().getString("order.currency");
-
+    
         Map<String, Map<String, Object>> transactions = response.jsonPath().getMap("transactions");
         String dynamicTransactionId = transactions.keySet().iterator().next();
         String status = transactions.get(dynamicTransactionId).get("status").toString();
-
-
+    
+        // Verify that the price returned from the API matches the price shown on the payment page
         Assert.assertEquals(priceFromOrderPage, priceFromOrderStatus);
+    
+        // Verify that the currency returned from the API matches the one shown on the payment page
         Assert.assertEquals(currencyFromOrderPage, currencyFromOrderStatus);
+    
+        // Verify that the payment transaction status is 'success'
         Assert.assertEquals("success", status);
-
     }
+
 }
