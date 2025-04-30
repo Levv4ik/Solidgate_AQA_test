@@ -1,4 +1,3 @@
-# Solidgate_AQA_test
 
 # Automated UI & API Testing Project
 
